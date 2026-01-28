@@ -29,7 +29,7 @@ groq_chave = st.secrets["GROQ_CHAVE"]
 os.environ["GROQ_API_KEY"] = groq_chave
 # gemini_chave = st.secrets["GEMINI_CHAVE"]
 # os.environ["GOOGLE_API_KEY"] = gemini_chave
-qdrant_chave = st.secrets["QDRANT_CHAVE"]
+# qdrant_chave = st.secrets["QDRANT_CHAVE"]
 
 # Cria o chat e o inicializa com uma mensagem
 if "mensagens" not in st.session_state.keys():
