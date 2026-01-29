@@ -30,35 +30,36 @@ if "mensagens" not in st.session_state.keys():
         {"role": "assistant", "content": "Olá! Qual o plano para hoje?"}
     ]
 
-# TODO colocar sistema de prompts
-Settings.llm = Groq(
-    model="llama-3.3-70b-versatile",
-    api_key=os.environ["GROQ_API_KEY"]
-)
+# def primeiro_carregamento():
+#     documentos = SimpleDirectoryReader(input_dir="./data/pdfs/").load_data() # Verificar sobre quantidade de chunks
 
-Settings.embed_model = HuggingFaceEmbedding( 
-    model_name="BAAI/bge-m3"
-)
+#     db = chromadb.PersistentClient(path="./data/chroma_db")
+#     chroma_collection = db.get_or_create_collection("educa-rag")
+#     vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
+#     storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
-def primeiro_carregamento():
-    documentos = SimpleDirectoryReader(input_dir="./data/pdfs/").load_data() # Verificar sobre quantidade de chunks
+#     index = VectorStoreIndex.from_documents(
+#         documentos,
+#         storage_context=storage_context,
+#         embed_model=Settings.embed_model
+#     )
 
-    db = chromadb.PersistentClient(path="./data/chroma_db")
-    chroma_collection = db.get_or_create_collection("educa-rag")
-    vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
-    storage_context = StorageContext.from_defaults(vector_store=vector_store)
-
-    index = VectorStoreIndex.from_documents(
-        documentos,
-        storage_context=storage_context,
-        embed_model=Settings.embed_model
-    )
-
-    return index
+#     return index
 
 # Buscando os dados no Qdrant, depois dos documentos já indexados
 @st.cache_resource(show_spinner=False) # TODO: documentar o que faz
 def carregamento_definitivo():
+
+    # TODO colocar sistema de prompts
+    Settings.llm = Groq(
+        model="llama-3.3-70b-versatile",
+        api_key=os.environ["GROQ_API_KEY"]
+    )
+
+    Settings.embed_model = HuggingFaceEmbedding( 
+        model_name="BAAI/bge-m3"
+    )
+
 
     db2 = chromadb.PersistentClient(path="./data/chroma_db")
     chroma_collection = db2.get_or_create_collection("educa-rag")
