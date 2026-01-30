@@ -30,6 +30,12 @@ if "mensagens" not in st.session_state.keys():
         {"role": "assistant", "content": "Olá! Qual o plano para hoje?"}
     ]
 
+# Usado apenas para indexar o primeiro carregamento
+# Settings.embed_model = HuggingFaceEmbedding( 
+#     model_name="BAAI/bge-m3"
+# )
+
+
 # def primeiro_carregamento():
 #     documentos = SimpleDirectoryReader(input_dir="./data/pdfs/").load_data() # Verificar sobre quantidade de chunks
 
@@ -50,29 +56,25 @@ if "mensagens" not in st.session_state.keys():
 @st.cache_resource(show_spinner=False) # TODO: documentar o que faz
 def carregamento_definitivo():
 
-    # TODO colocar sistema de prompts
-    Settings.llm = Groq(
-        model="llama-3.3-70b-versatile",
-        api_key=os.environ["GROQ_API_KEY"]
+    vector_store = ChromaVectorStore(
+        persist_dir="data/chroma_db"
     )
 
-    Settings.embed_model = HuggingFaceEmbedding( 
-        model_name="BAAI/bge-m3"
+    storage_context = StorageContext.from_defaults(
+        vector_store=vector_store
     )
 
-
-    db2 = chromadb.PersistentClient(path="./data/chroma_db")
-    chroma_collection = db2.get_or_create_collection("educa-rag")
-    vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
-
-    index = VectorStoreIndex.from_vector_store(
-        vector_store, 
-        embed_model=Settings.embed_model
-    )
+    index = load_index_from_storage(storage_context)
 
     return index
 
 index = carregamento_definitivo()
+
+# TODO colocar sistema de prompts
+Settings.llm = Groq(
+    model="llama-3.3-70b-versatile",
+    api_key=os.environ["GROQ_API_KEY"]
+)
 
 # Inicializa o chat engine com st_session_state
 if "chat_engine" not in st.session_state.keys():
