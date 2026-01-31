@@ -5,8 +5,8 @@ from llama_index.core import StorageContext
 from llama_index.core import Settings
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.groq import Groq
-from llama_index.vector_stores.chroma import ChromaVectorStore
-import chromadb
+from llama_index.vector_stores.qdrant import QdrantVectorStore
+import qdrant_client
 
 # Configurações da página com streamlit
 st.set_page_config(
@@ -23,6 +23,7 @@ st.info("O assistente irá ajuda-lo a gerar PEIs (Plano de Ensino Individualizad
 # Definição das chaves API
 groq_chave = st.secrets["GROQ_CHAVE"]
 os.environ["GROQ_API_KEY"] = groq_chave
+qdrant_chave = st.secrets["QDRANT_CHAVE"]
 
 # Cria o chat e o inicializa com uma mensagem
 if "mensagens" not in st.session_state.keys():
@@ -30,51 +31,52 @@ if "mensagens" not in st.session_state.keys():
         {"role": "assistant", "content": "Olá! Qual o plano para hoje?"}
     ]
 
-# Usado apenas para indexar o primeiro carregamento
-# Settings.embed_model = HuggingFaceEmbedding( 
-#     model_name="BAAI/bge-m3"
-# )
-
-
-# def primeiro_carregamento():
-#     documentos = SimpleDirectoryReader(input_dir="./data/pdfs/").load_data() # Verificar sobre quantidade de chunks
-
-#     db = chromadb.PersistentClient(path="./data/chroma_db")
-#     chroma_collection = db.get_or_create_collection("educa-rag")
-#     vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
-#     storage_context = StorageContext.from_defaults(vector_store=vector_store)
-
-#     index = VectorStoreIndex.from_documents(
-#         documentos,
-#         storage_context=storage_context,
-#         embed_model=Settings.embed_model
-#     )
-
-#     return index
-
-# Buscando os dados no Qdrant, depois dos documentos já indexados
-@st.cache_resource(show_spinner=False) # TODO: documentar o que faz
-def carregamento_definitivo():
-
-    vector_store = ChromaVectorStore(
-        persist_dir="data/chroma_db"
+def conectar_qdrant():
+    client = qdrant_client.QdrantClient(
+        url="https://9c288860-1423-474d-bc42-cbf314afd1f0.sa-east-1-0.aws.cloud.qdrant.io",
+        api_key=qdrant_chave
     )
-
-    storage_context = StorageContext.from_defaults(
-        vector_store=vector_store
-    )
-
-    index = load_index_from_storage(storage_context)
-
-    return index
-
-index = carregamento_definitivo()
+    return client
 
 # TODO colocar sistema de prompts
 Settings.llm = Groq(
     model="llama-3.3-70b-versatile",
     api_key=os.environ["GROQ_API_KEY"]
 )
+
+Settings.embed_model = HuggingFaceEmbedding( 
+    model_name="BAAI/bge-m3"
+)
+
+def primeiro_carregamento():
+    documentos = SimpleDirectoryReader(input_dir="data/pdfs/").load_data() # Verificar sobre quantidade de chunks
+
+    client = conectar_qdrant()
+    
+    # Definindo o vector store para armazenar os dados indexados
+    vector_store = QdrantVectorStore(client=client, collection_name="EducaRAG")
+
+    storage_context = StorageContext.from_defaults(vector_store=vector_store)
+
+    index = VectorStoreIndex.from_documents(documentos, storage_context=storage_context, embed_model=Settings.embed_model)
+    return index
+
+# Buscando os dados no Qdrant Cloud, depois dos documentos já indexados
+@st.cache_resource(show_spinner=False) # TODO: documentar o que faz
+def carregamento_definitivo():
+    client = conectar_qdrant()
+
+    # Alteração dos modelos de LLM e embedding do llama-index
+    # TODO: Testar outras LLMs e embed models para verificar melhora nas respostas
+    # TODO: Verificar temperatura e max tokens
+
+    vector_store = QdrantVectorStore(client=client, collection_name="EducaRAG")
+
+    index = VectorStoreIndex.from_vector_store(vector_store, embed_model=Settings.embed_model)
+    return index
+
+
+index = carregamento_definitivo()
 
 # Inicializa o chat engine com st_session_state
 if "chat_engine" not in st.session_state.keys():
