@@ -10,19 +10,19 @@ import qdrant_client
 
 # Configurações da página com streamlit
 st.set_page_config(
-    page_title="EducaRAG", 
+    page_title="EduRAG", 
     page_icon="🦉",
     layout="centered",
     initial_sidebar_state="auto",
     menu_items=None
 )
 
-st.title("🦉 EducaRAG")
+st.title("🦉 EduRAG")
 st.info("O assistente irá ajuda-lo a gerar PEIs (Plano de Ensino Individualizado) para seus alunos de forma rápida e eficiente.")
 
 # Definição das chaves API
 groq_chave = st.secrets["GROQ_CHAVE"]
-os.environ["GROQ_API_KEY"] = groq_chave
+# os.environ["GROQ_API_KEY"] = groq_chave
 qdrant_chave = st.secrets["QDRANT_CHAVE"]
 
 # Cria o chat e o inicializa com uma mensagem
@@ -41,7 +41,7 @@ def conectar_qdrant():
 # TODO colocar sistema de prompts
 Settings.llm = Groq(
     model="llama-3.3-70b-versatile",
-    api_key=os.environ["GROQ_API_KEY"]
+    api_key=groq_chave
 )
 
 Settings.embed_model = HuggingFaceEmbedding( 
