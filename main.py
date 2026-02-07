@@ -17,7 +17,7 @@ st.set_page_config(
     menu_items=None
 )
 
-st.title("EducaRAG")
+st.title("🦉 EducaRAG")
 st.info("O assistente irá ajuda-lo a gerar PEIs (Plano de Ensino Individualizado) para seus alunos de forma rápida e eficiente.")
 
 # Definição das chaves API
