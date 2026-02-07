@@ -33,81 +33,83 @@ if "mensagens" not in st.session_state.keys():
 
 def conectar_qdrant():
     client = qdrant_client.QdrantClient(
-        url="https://9c288860-1423-474d-bc42-cbf314afd1f0.sa-east-1-0.aws.cloud.qdrant.io:6333",
+        url="https://9c288860-1423-474d-bc42-cbf314afd1f0.sa-east-1-0.aws.cloud.qdrant.io",
         api_key=qdrant_chave,
     )
     return client
 
-# TODO colocar sistema de prompts
-Settings.llm = Groq(
-    model="llama-3.3-70b-versatile",
-    api_key=groq_chave
-)
+st.warning("Chegou até aqui")
 
-Settings.embed_model = HuggingFaceEmbedding( 
-    model_name="BAAI/bge-m3"
-)
+# # TODO colocar sistema de prompts
+# Settings.llm = Groq(
+#     model="llama-3.3-70b-versatile",
+#     api_key=groq_chave
+# )
 
-# def primeiro_carregamento():
-#     documentos = SimpleDirectoryReader(input_dir="data/pdfs/").load_data() # Verificar sobre quantidade de chunks
+# Settings.embed_model = HuggingFaceEmbedding( 
+#     model_name="BAAI/bge-m3"
+# )
 
-#     client = conectar_qdrant()
+# # def primeiro_carregamento():
+# #     documentos = SimpleDirectoryReader(input_dir="data/pdfs/").load_data() # Verificar sobre quantidade de chunks
+
+# #     client = conectar_qdrant()
     
-#     # Definindo o vector store para armazenar os dados indexados
+# #     # Definindo o vector store para armazenar os dados indexados
+# #     vector_store = QdrantVectorStore(client=client, collection_name="EducaRAG")
+
+# #     storage_context = StorageContext.from_defaults(vector_store=vector_store)
+
+# #     index = VectorStoreIndex.from_documents(documentos, storage_context=storage_context, embed_model=Settings.embed_model)
+# #     return index
+
+# # Buscando os dados no Qdrant Cloud, depois dos documentos já indexados
+# @st.cache_resource(show_spinner=False) # TODO: documentar o que faz
+# def carregamento_definitivo():
+#     client = conectar_qdrant()
+
+#     # Alteração dos modelos de LLM e embedding do llama-index
+#     # TODO: Testar outras LLMs e embed models para verificar melhora nas respostas
+#     # TODO: Verificar temperatura e max tokens
+
 #     vector_store = QdrantVectorStore(client=client, collection_name="EducaRAG")
 
-#     storage_context = StorageContext.from_defaults(vector_store=vector_store)
-
-#     index = VectorStoreIndex.from_documents(documentos, storage_context=storage_context, embed_model=Settings.embed_model)
+#     index = VectorStoreIndex.from_vector_store(vector_store, embed_model=Settings.embed_model)
 #     return index
 
-# Buscando os dados no Qdrant Cloud, depois dos documentos já indexados
-@st.cache_resource(show_spinner=False) # TODO: documentar o que faz
-def carregamento_definitivo():
-    client = conectar_qdrant()
 
-    # Alteração dos modelos de LLM e embedding do llama-index
-    # TODO: Testar outras LLMs e embed models para verificar melhora nas respostas
-    # TODO: Verificar temperatura e max tokens
+# index = carregamento_definitivo()
 
-    vector_store = QdrantVectorStore(client=client, collection_name="EducaRAG")
+# # Inicializa o chat engine com st_session_state
+# if "chat_engine" not in st.session_state.keys():
+#     # TODO: testar chat engine com outras parametrizações
+#     st.session_state.chat_engine = index.as_chat_engine(
+#         chat_mode="condense_question", 
+#         verbose=True,
+#         streaming=False,
+#         llm=Settings.llm
+#     )
 
-    index = VectorStoreIndex.from_vector_store(vector_store, embed_model=Settings.embed_model)
-    return index
+# # Prompt para inserção do usuário e salva no histórico
+# if prompt := st.chat_input(
+#     "Digite aqui"
+# ): 
+#     st.session_state.mensagens.append({"role": "user", "content": prompt})
 
+# for mensagem in st.session_state.mensagens:
+#     with st.chat_message(mensagem["role"]):
+#         st.write(mensagem["content"])
 
-index = carregamento_definitivo()
+# # Se a última mensagem não for do assistente, gere uma nova resposta
+# if st.session_state.mensagens[-1]["role"] != "assistant":
+#     with st.chat_message("assistant"):
+#         with st.spinner("Pensando..."):
+#             resposta_stream = st.session_state.chat_engine.stream_chat(prompt)
 
-# Inicializa o chat engine com st_session_state
-if "chat_engine" not in st.session_state.keys():
-    # TODO: testar chat engine com outras parametrizações
-    st.session_state.chat_engine = index.as_chat_engine(
-        chat_mode="condense_question", 
-        verbose=True,
-        streaming=True,
-        llm=Settings.llm
-    )
+#             st.write_stream(resposta_stream.response_gen)
 
-# Prompt para inserção do usuário e salva no histórico
-if prompt := st.chat_input(
-    "Digite aqui"
-): 
-    st.session_state.mensagens.append({"role": "user", "content": prompt})
+#             mensagem = {"role": "assistant", "content": resposta_stream.response}
 
-for mensagem in st.session_state.mensagens:
-    with st.chat_message(mensagem["role"]):
-        st.write(mensagem["content"])
-
-# Se a última mensagem não for do assistente, gere uma nova resposta
-if st.session_state.mensagens[-1]["role"] != "assistant":
-    with st.chat_message("assistant"):
-        with st.spinner("Pensando..."):
-            resposta_stream = st.session_state.chat_engine.stream_chat(prompt)
-
-            st.write_stream(resposta_stream.response_gen)
-
-            mensagem = {"role": "assistant", "content": resposta_stream.response}
-
-            st.session_state.mensagens.append(mensagem)
-else:
-    pass
+#             st.session_state.mensagens.append(mensagem)
+# else:
+#     pass
