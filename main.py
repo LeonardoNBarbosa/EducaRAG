@@ -75,7 +75,7 @@ Settings.llm = Groq(
 def carregamento_definitivo():
 
     Settings.embed_model = HuggingFaceEmbedding( 
-        model_name="BAAI/bge-m3"
+        model_name="all-MiniLM-L6-v2"
     )
 
     client = conectar_qdrant()
