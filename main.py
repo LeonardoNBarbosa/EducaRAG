@@ -57,10 +57,6 @@ Settings.llm = Groq(
     api_key=groq_chave
 )
 
-Settings.embed_model = HuggingFaceEmbedding( 
-    model_name="BAAI/bge-m3"
-)
-
 # # def primeiro_carregamento():
 # #     documentos = SimpleDirectoryReader(input_dir="data/pdfs/").load_data() # Verificar sobre quantidade de chunks
 
@@ -75,21 +71,26 @@ Settings.embed_model = HuggingFaceEmbedding(
 # #     return index
 
 # # Buscando os dados no Qdrant Cloud, depois dos documentos já indexados
-# @st.cache_resource(show_spinner=False) # TODO: documentar o que faz
-# def carregamento_definitivo():
-#     client = conectar_qdrant()
+@st.cache_resource(show_spinner=False) # TODO: documentar o que faz
+def carregamento_definitivo():
 
-#     # Alteração dos modelos de LLM e embedding do llama-index
-#     # TODO: Testar outras LLMs e embed models para verificar melhora nas respostas
-#     # TODO: Verificar temperatura e max tokens
+    Settings.embed_model = HuggingFaceEmbedding( 
+        model_name="BAAI/bge-m3"
+    )
 
-#     vector_store = QdrantVectorStore(client=client, collection_name="EducaRAG")
+    client = conectar_qdrant()
 
-#     index = VectorStoreIndex.from_vector_store(vector_store, embed_model=Settings.embed_model)
-#     return index
+    # Alteração dos modelos de LLM e embedding do llama-index
+    # TODO: Testar outras LLMs e embed models para verificar melhora nas respostas
+    # TODO: Verificar temperatura e max tokens
+
+    vector_store = QdrantVectorStore(client=client, collection_name="EducaRAG")
+
+    index = VectorStoreIndex.from_vector_store(vector_store, embed_model=Settings.embed_model)
+    return index
 
 
-# index = carregamento_definitivo()
+index = carregamento_definitivo()
 
 # # Inicializa o chat engine com st_session_state
 # if "chat_engine" not in st.session_state.keys():
