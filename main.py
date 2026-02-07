@@ -57,9 +57,9 @@ Settings.llm = Groq(
     api_key=groq_chave
 )
 
-# Settings.embed_model = HuggingFaceEmbedding( 
-#     model_name="BAAI/bge-m3"
-# )
+Settings.embed_model = HuggingFaceEmbedding( 
+    model_name="BAAI/bge-m3"
+)
 
 # # def primeiro_carregamento():
 # #     documentos = SimpleDirectoryReader(input_dir="data/pdfs/").load_data() # Verificar sobre quantidade de chunks
