@@ -51,15 +51,15 @@ st.warning("Chegou até aqui")
 
 client = conectar_qdrant()
 
-# # TODO colocar sistema de prompts
-# Settings.llm = Groq(
-#     model="llama-3.3-70b-versatile",
-#     api_key=groq_chave
-# )
+# TODO colocar sistema de prompts
+Settings.llm = Groq(
+    model="llama-3.3-70b-versatile",
+    api_key=groq_chave
+)
 
-# Settings.embed_model = HuggingFaceEmbedding( 
-#     model_name="BAAI/bge-m3"
-# )
+Settings.embed_model = HuggingFaceEmbedding( 
+    model_name="BAAI/bge-m3"
+)
 
 # # def primeiro_carregamento():
 # #     documentos = SimpleDirectoryReader(input_dir="data/pdfs/").load_data() # Verificar sobre quantidade de chunks
