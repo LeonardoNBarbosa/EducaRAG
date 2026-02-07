@@ -33,8 +33,8 @@ if "mensagens" not in st.session_state.keys():
 
 def conectar_qdrant():
     client = qdrant_client.QdrantClient(
-        url="https://9c288860-1423-474d-bc42-cbf314afd1f0.sa-east-1-0.aws.cloud.qdrant.io",
-        api_key=qdrant_chave
+        url="https://9c288860-1423-474d-bc42-cbf314afd1f0.sa-east-1-0.aws.cloud.qdrant.io:6333",
+        api_key=qdrant_chave,
     )
     return client
 
@@ -48,18 +48,18 @@ Settings.embed_model = HuggingFaceEmbedding(
     model_name="BAAI/bge-m3"
 )
 
-def primeiro_carregamento():
-    documentos = SimpleDirectoryReader(input_dir="data/pdfs/").load_data() # Verificar sobre quantidade de chunks
+# def primeiro_carregamento():
+#     documentos = SimpleDirectoryReader(input_dir="data/pdfs/").load_data() # Verificar sobre quantidade de chunks
 
-    client = conectar_qdrant()
+#     client = conectar_qdrant()
     
-    # Definindo o vector store para armazenar os dados indexados
-    vector_store = QdrantVectorStore(client=client, collection_name="EducaRAG")
+#     # Definindo o vector store para armazenar os dados indexados
+#     vector_store = QdrantVectorStore(client=client, collection_name="EducaRAG")
 
-    storage_context = StorageContext.from_defaults(vector_store=vector_store)
+#     storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
-    index = VectorStoreIndex.from_documents(documentos, storage_context=storage_context, embed_model=Settings.embed_model)
-    return index
+#     index = VectorStoreIndex.from_documents(documentos, storage_context=storage_context, embed_model=Settings.embed_model)
+#     return index
 
 # Buscando os dados no Qdrant Cloud, depois dos documentos já indexados
 @st.cache_resource(show_spinner=False) # TODO: documentar o que faz
