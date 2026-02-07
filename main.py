@@ -32,13 +32,24 @@ if "mensagens" not in st.session_state.keys():
     ]
 
 def conectar_qdrant():
-    client = qdrant_client.QdrantClient(
-        url="https://9c288860-1423-474d-bc42-cbf314afd1f0.sa-east-1-0.aws.cloud.qdrant.io",
-        api_key=qdrant_chave,
-    )
-    return client
+    try:
+        client = qdrant_client.QdrantClient(
+            url="https://9c288860-1423-474d-bc42-cbf314afd1f0.sa-east-1-0.aws.cloud.qdrant.io",
+            api_key=qdrant_chave,
+        )
+
+        client.get_collections()
+
+        print("Conectado ao Qdrant com sucesso!")
+        return client
+    except Exception as exc:
+        print(f"ERRO ao conectar ao Qdrant: {exc}")
+    
+    return None
 
 st.warning("Chegou até aqui")
+
+client = conectar_qdrant()
 
 # # TODO colocar sistema de prompts
 # Settings.llm = Groq(
