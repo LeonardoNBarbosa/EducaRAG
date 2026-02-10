@@ -84,7 +84,7 @@ def carregamento_definitivo():
     return index
 
 
-index = primeiro_carregamento()
+index = carregamento_definitivo()
 
 # Inicializa o chat engine com st_session_state
 if "chat_engine" not in st.session_state.keys():
