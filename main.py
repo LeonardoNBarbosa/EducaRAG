@@ -34,6 +34,7 @@ def conectar_qdrant():
     client = qdrant_client.QdrantClient(
         url="https://7a28d8e1-a0c9-4349-8ce5-6c6a5588a1aa.sa-east-1-0.aws.cloud.qdrant.io",
         api_key=qdrant_chave,
+        check_compatibility=False
     )
     return client
 
