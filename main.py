@@ -34,7 +34,7 @@ def conectar_qdrant():
     client = qdrant_client.QdrantClient(
         url="https://7a28d8e1-a0c9-4349-8ce5-6c6a5588a1aa.sa-east-1-0.aws.cloud.qdrant.io",
         api_key=qdrant_chave,
-        check_compatibility=False
+        check_compatibility=False,
     )
     return client
 
@@ -55,7 +55,7 @@ def primeiro_carregamento():
     client = conectar_qdrant()
     
     # Definindo o vector store para armazenar os dados indexados
-    vector_store = QdrantVectorStore(client=client, collection_name="EducaRAG")
+    vector_store = QdrantVectorStore(collection_name="EducaRAG", client=client)
 
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
@@ -71,7 +71,7 @@ def carregamento_definitivo():
     # TODO: Testar outras LLMs e embed models para verificar melhora nas respostas
     # TODO: Verificar temperatura e max tokens
 
-    vector_store = QdrantVectorStore(client=client, collection_name="EducaRAG")
+    vector_store = QdrantVectorStore(collection_name="EducaRAG", client=client)
 
     index = VectorStoreIndex.from_vector_store(vector_store, embed_model=Settings.embed_model)
     return index
