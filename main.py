@@ -49,7 +49,10 @@ Settings.embed_model = HuggingFaceEmbedding(
     model_name="BAAI/bge-m3",
     device="cpu",
     embed_batch_size=10,
-    model_kwargs={"trust_remote_code": True}
+    model_kwargs={
+        "trust_remote_code": True,
+        "low_cpu_mem_usage": False
+    }
 )
 
 def primeiro_carregamento():
