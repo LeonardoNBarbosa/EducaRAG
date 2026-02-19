@@ -10,14 +10,14 @@ import qdrant_client
 
 # Configurações da página com streamlit
 st.set_page_config(
-    page_title="EduRAG", 
+    page_title="EducaRAG", 
     page_icon="🦉",
     layout="centered",
     initial_sidebar_state="auto",
     menu_items=None
 )
 
-st.title("🦉 EduRAG")
+st.title("🦉 EducaRAG")
 st.info("O assistente irá ajuda-lo a gerar PEIs (Plano de Ensino Individualizado) para seus alunos de forma rápida e eficiente.")
 
 # Definição das chaves API
