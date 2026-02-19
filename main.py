@@ -46,7 +46,10 @@ Settings.llm = Groq(
 )
 
 Settings.embed_model = HuggingFaceEmbedding( 
-    model_name="BAAI/bge-m3"
+    model_name="BAAI/bge-m3",
+    device="cpu",
+    embed_batch_size=10,
+    model_kwargs={"trust_remote_code": True}
 )
 
 def primeiro_carregamento():
