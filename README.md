@@ -26,7 +26,7 @@ O RAG (Retrieval-Augmented Generation), no português Geração Aumentada por Re
 - Com a aplicação do RAG, garantimos que os PEIs e as informações fornecidas são baseados em fontes de dados confiáveis, seguindo uma estrutura oficial usada em documentos educacionais brasileiros, conforme a legislação vigente (LDB, Constituição Federal, BNCC e Política Nacional de Educação Especial).
 - Para ajudar os educadores a gerar PEIs com praticidade.
 
-## Instruções de Instalação
+## Instruções de instalação
 Clonar repositório
 ```
 git clone repositório

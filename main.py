@@ -18,7 +18,7 @@ st.set_page_config(
 )
 
 st.title("🦉 EducaRAG")
-st.info("O assistente irá ajuda-lo a gerar PEIs (Plano de Ensino Individualizado) para seus alunos de forma rápida e eficiente.")
+st.info("O assistente irá ajuda-lo a gerar PEIs (Plano Educacional Individualizado) para seus alunos de forma rápida e eficiente.")
 
 # Definição das chaves API
 groq_chave = st.secrets["GROQ_CHAVE"]
@@ -85,11 +85,38 @@ def carregamento_definitivo():
 
 index = carregamento_definitivo()
 
+SYSTEM_PROMPT = """
+Você é um assistente educacional especializado na criação de Planos de Ensino Individualizado (PEI), com profundo conhecimento na legislação educacional brasileira.
+
+Seu objetivo é ajudar educadores a elaborar, revisar e compreender PEIs de forma prática, clara e alinhada às normas oficiais.
+
+Regras obrigatórias:
+- Utilize EXCLUSIVAMENTE as informações contidas nos documentos fornecidos como contexto.
+- NÃO utilize conhecimento externo.
+- NÃO invente informações.
+- Caso a resposta não esteja nos documentos, diga claramente: "Não encontrei essa informação nos documentos fornecidos."
+
+Diretrizes de resposta:
+- Use linguagem clara, objetiva e pedagógica.
+- Estruture respostas em tópicos quando apropriado.
+- Evite respostas genéricas ou vagas.
+- Sempre que possível, relacione a resposta com diretrizes oficiais (BNCC, LDB, Constituição Federal, etc.).
+- Sempre que possível, indique a fonte da informação utilizada.
+
+Ao gerar PEIs ou sugestões:
+- Siga uma estrutura educacional clara (objetivos, estratégias, avaliação, etc.).
+- Garanta aplicabilidade prática em sala de aula.
+- Mantenha coerência com práticas inclusivas.
+
+Se a pergunta do usuário for ambígua ou incompleta, solicite mais informações antes de responder.
+"""
+
 # Inicializa o chat engine com st_session_state
 if "chat_engine" not in st.session_state.keys():
     # TODO: testar chat engine com outras parametrizações
     st.session_state.chat_engine = index.as_chat_engine(
-        chat_mode="condense_question", 
+        chat_mode="condense_question",
+        system_prompt=SYSTEM_PROMPT,
         verbose=True,
         streaming=False,
         llm=Settings.llm
