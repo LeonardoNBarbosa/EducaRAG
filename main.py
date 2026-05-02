@@ -39,8 +39,6 @@ def conectar_qdrant():
     )
     return client
 
-
-# TODO colocar sistema de prompts
 Settings.llm = Groq(
     model="llama-3.3-70b-versatile",
     api_key=groq_chave
@@ -61,61 +59,72 @@ Settings.node_parser = SentenceSplitter(
     chunk_overlap=50
 )
 
-def primeiro_carregamento():
-    documentos = SimpleDirectoryReader(input_dir="data/pdfs/").load_data() # Verificar sobre quantidade de chunks
-
+@st.cache_resource(show_spinner=False)
+def inicializar_index():
     client = conectar_qdrant()
+    COLLECTION_NAME = "EducaRAG-v2"
+
+    # Verifica se a collection existe
+    if client.collection_exists(COLLECTION_NAME):
+        info = client.get_collection(COLLECTION_NAME)
+
+        if info.points_count > 0:
+            vector_store = QdrantVectorStore(
+                collection_name=COLLECTION_NAME, 
+                client=client
+            )
+
+            index = VectorStoreIndex.from_vector_store(
+                vector_store, 
+                embed_model=Settings.embed_model
+            )
+
+            return index
     
-    # Definindo o vector store para armazenar os dados indexados
-    vector_store = QdrantVectorStore(collection_name="EducaRAG-v2", client=client)
+    documentos = SimpleDirectoryReader(input_dir="data/pdfs/").load_data()
+
+    vector_store = QdrantVectorStore(
+        collection_name=COLLECTION_NAME,
+        client=client
+    )
 
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
-    index = VectorStoreIndex.from_documents(documentos, storage_context=storage_context, embed_model=Settings.embed_model)
+    index = VectorStoreIndex.from_documents(
+        documentos, 
+        storage_context=storage_context, 
+        embed_model=Settings.embed_model
+    )
+    
     return index
 
-# Buscando os dados no Qdrant Cloud, depois dos documentos já indexados
-@st.cache_resource(show_spinner=False) # TODO: documentar o que faz
-def carregamento_definitivo():
-    client = conectar_qdrant()
-
-    # Alteração dos modelos de LLM e embedding do llama-index
-    # TODO: Testar outras LLMs e embed models para verificar melhora nas respostas
-    # TODO: Verificar temperatura e max tokens
-
-    vector_store = QdrantVectorStore(collection_name="EducaRAG-v2", client=client)
-
-    index = VectorStoreIndex.from_vector_store(vector_store, embed_model=Settings.embed_model)
-    return index
-
-
-index = carregamento_definitivo()
+index = inicializar_index()
 
 SYSTEM_PROMPT = """
-Você é um assistente educacional especializado na criação de Planos de Ensino Individualizado (PEI), com profundo conhecimento na legislação educacional brasileira.
+    Você é um assistente educacional especializado na criação de Planos de Ensino Individualizado (PEI), com profundo conhecimento na legislação educacional brasileira.
 
-Seu objetivo é ajudar educadores a elaborar, revisar e compreender PEIs de forma prática, clara e alinhada às normas oficiais.
+    Seu objetivo é ajudar educadores a elaborar, revisar e compreender PEIs de forma prática, clara e alinhada às normas oficiais.
 
-Regras obrigatórias:
-- Utilize EXCLUSIVAMENTE as informações contidas nos documentos fornecidos como contexto.
-- NÃO utilize conhecimento externo.
-- NÃO invente informações.
-- Priorize sempre as informações mais relevantes do contexto recuperado.
-- Caso a resposta não esteja nos documentos, diga claramente: "Não encontrei essa informação nos documentos fornecidos. Você pode reformular a pergunta ou fornecer mais detalhes?"
+    Regras obrigatórias:
+    - Utilize EXCLUSIVAMENTE as informações contidas nos documentos fornecidos como contexto.
+    - NÃO utilize conhecimento externo.
+    - NÃO invente informações.
+    - Priorize sempre as informações mais relevantes do contexto recuperado.
+    - Caso a resposta não esteja nos documentos, diga claramente: "Não encontrei essa informação nos documentos fornecidos. Você pode reformular a pergunta ou fornecer mais detalhes?"
 
-Diretrizes de resposta:
-- Use linguagem clara, objetiva e pedagógica.
-- Estruture respostas em tópicos quando apropriado.
-- Evite respostas genéricas ou vagas.
-- Sempre que possível, relacione a resposta com diretrizes oficiais presentes nos documentos fornecidos.
-- Sempre que possível, indique explicitamente o documento de origem da informação (ex: BNCC, LDB, etc.).
+    Diretrizes de resposta:
+    - Use linguagem clara, objetiva e pedagógica.
+    - Estruture respostas em tópicos quando apropriado.
+    - Evite respostas genéricas ou vagas.
+    - Sempre que possível, relacione a resposta com diretrizes oficiais presentes nos documentos fornecidos.
+    - Sempre que possível, indique explicitamente o documento de origem da informação (ex: BNCC, LDB, etc.).
 
-Ao gerar PEIs ou sugestões:
-- Siga uma estrutura educacional clara (objetivos, estratégias, avaliação, etc.).
-- Garanta aplicabilidade prática em sala de aula.
-- Mantenha coerência com práticas inclusivas.
+    Ao gerar PEIs ou sugestões:
+    - Siga uma estrutura educacional clara (objetivos, estratégias, avaliação, etc.).
+    - Garanta aplicabilidade prática em sala de aula.
+    - Mantenha coerência com práticas inclusivas.
 
-Se a pergunta do usuário for ambígua ou incompleta, solicite mais informações antes de responder.
+    Se a pergunta do usuário for ambígua ou incompleta, solicite mais informações antes de responder.
 """
 
 # Inicializa o chat engine com st_session_state
