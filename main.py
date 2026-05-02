@@ -3,6 +3,7 @@ import streamlit as st
 from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
 from llama_index.core import StorageContext
 from llama_index.core import Settings
+from llama_index.core import SentenceSplitter
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.groq import Groq
 from llama_index.vector_stores.qdrant import QdrantVectorStore
@@ -53,6 +54,11 @@ Settings.embed_model = HuggingFaceEmbedding(
         "trust_remote_code": True,
         "low_cpu_mem_usage": False
     }
+)
+
+Settings.node_parser = SentenceSplitter(
+    chunk_size=512, 
+    chunk_overlap=50
 )
 
 def primeiro_carregamento():
