@@ -1,5 +1,6 @@
-Instruções.txt
+info.txt
 .streamlit/secrets.toml
 .venv
 data/
-testes/
+tests/
+__pycache__
