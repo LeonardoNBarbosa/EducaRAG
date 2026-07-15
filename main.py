@@ -1,136 +1,49 @@
-import os
 import streamlit as st
-from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
-from llama_index.core import StorageContext
-from llama_index.core import Settings
-from llama_index.core.node_parser import SentenceSplitter
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-from llama_index.llms.groq import Groq
-from llama_index.vector_stores.qdrant import QdrantVectorStore
-import qdrant_client
-from config import SYSTEM_PROMPT
+from app.config import get_secrets, MENSAGEM_INICIAL
+from app.rag import inicializar_index, criar_chat_engine
+from app.ui import injetar_css, renderizar_header, renderizar_sidebar, renderizar_mensagem_usuario
 
-# Configurações da página com streamlit
 st.set_page_config(
-    page_title="EducaRAG", 
-    page_icon="🦉",
-    layout="centered",
-    initial_sidebar_state="auto",
-    menu_items=None
+    page_title="EducaRAG",
+    page_icon="📚",
+    layout="wide",
+    initial_sidebar_state="expanded",
 )
 
-st.title("🦉 EducaRAG")
-st.info("O assistente irá ajuda-lo a gerar PEIs (Plano Educacional Individualizado) para seus alunos de forma rápida e eficiente.")
+injetar_css()
+renderizar_sidebar()
+renderizar_header()
 
-# Definição das chaves API
-groq_chave = st.secrets["GROQ_CHAVE"]
-qdrant_chave = st.secrets["QDRANT_CHAVE"]
+secrets = get_secrets()
 
-# Cria o chat e o inicializa com uma mensagem
-if "mensagens" not in st.session_state.keys():
+with st.spinner("Conectando à base de conhecimento..."):
+    index = inicializar_index(
+        groq_key=secrets["groq"],
+        qdrant_key=secrets["qdrant"],
+    )
+
+if "mensagens" not in st.session_state:
     st.session_state.mensagens = [
-        {"role": "assistant", "content": "Olá! Qual o plano para hoje?"}
+        {"role": "assistant", "content": MENSAGEM_INICIAL}
     ]
 
-def conectar_qdrant():
-    client = qdrant_client.QdrantClient(
-        url="https://ab974ce8-55d9-44d7-9250-eff6f00333e0.sa-east-1-0.aws.cloud.qdrant.io",
-        api_key=qdrant_chave,
-        check_compatibility=False,
-    )
-    return client
-
-Settings.llm = Groq(
-    model="llama-3.3-70b-versatile",
-    api_key=groq_chave
-)
-
-Settings.embed_model = HuggingFaceEmbedding( 
-    model_name="BAAI/bge-m3",
-    device="cpu",
-    embed_batch_size=10,
-    model_kwargs={
-        "trust_remote_code": True,
-        "low_cpu_mem_usage": False
-    }
-)
-
-Settings.node_parser = SentenceSplitter(
-    chunk_size=512, 
-    chunk_overlap=50
-)
-
-@st.cache_resource(show_spinner=False)
-def inicializar_index():
-    client = conectar_qdrant()
-    COLLECTION_NAME = "EducaRAG-v3"
-
-    # Verifica se a collection existe
-    if client.collection_exists(COLLECTION_NAME):
-        info = client.get_collection(COLLECTION_NAME)
-
-        if info.points_count > 0:
-            vector_store = QdrantVectorStore(
-                collection_name=COLLECTION_NAME, 
-                client=client
-            )
-
-            index = VectorStoreIndex.from_vector_store(
-                vector_store, 
-                embed_model=Settings.embed_model
-            )
-
-            return index
-    
-    documentos = SimpleDirectoryReader(input_dir="data/pdfs/").load_data()
-
-    vector_store = QdrantVectorStore(
-        collection_name=COLLECTION_NAME,
-        client=client
-    )
-
-    storage_context = StorageContext.from_defaults(vector_store=vector_store)
-
-    index = VectorStoreIndex.from_documents(
-        documentos, 
-        storage_context=storage_context, 
-        embed_model=Settings.embed_model
-    )
-    
-    return index
-
-index = inicializar_index()
-
-# Inicializa o chat engine com st_session_state
-if "chat_engine" not in st.session_state.keys():
-    # TODO: testar chat engine com outras parametrizações
-    st.session_state.chat_engine = index.as_chat_engine(
-        chat_mode="context",
-        system_prompt=SYSTEM_PROMPT,
-        verbose=False,
-        llm=Settings.llm
-    )
-
-# Prompt para inserção do usuário e salva no histórico
-if prompt := st.chat_input(
-    "Digite aqui"
-): 
-    st.session_state.mensagens.append({"role": "user", "content": prompt})
+if "chat_engine" not in st.session_state:
+    st.session_state.chat_engine = criar_chat_engine(index)
 
 for mensagem in st.session_state.mensagens:
-    with st.chat_message(mensagem["role"]):
-        st.write(mensagem["content"])
+    if mensagem["role"] == "user":
+        renderizar_mensagem_usuario(mensagem["content"])
+    else:
+        with st.chat_message("assistant"):
+            st.markdown(mensagem["content"])
 
-# Se a última mensagem não for do assistente, gere uma nova resposta
-if st.session_state.mensagens[-1]["role"] != "assistant":
+if prompt := st.chat_input("Pergunte sobre educação inclusiva, PEIs, legislação..."):
+    st.session_state.mensagens.append({"role": "user", "content": prompt})
+    renderizar_mensagem_usuario(prompt)
+
     with st.chat_message("assistant"):
-        with st.spinner("Pensando..."):
-            resposta_stream = st.session_state.chat_engine.stream_chat(prompt)
+        with st.spinner("Buscando nos documentos oficiais..."):
+            stream = st.session_state.chat_engine.stream_chat(prompt)
+            resposta = st.write_stream(stream.response_gen)
 
-            st.write_stream(resposta_stream.response_gen)
-
-            mensagem = {"role": "assistant", "content": resposta_stream.response}
-
-            st.session_state.mensagens.append(mensagem)
-else:
-    pass
+    st.session_state.mensagens.append({"role": "assistant", "content": resposta})

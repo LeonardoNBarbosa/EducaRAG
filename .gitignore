@@ -1,4 +1,4 @@
-info.txt
+info.md
 .streamlit/secrets.toml
 .venv
 data/
